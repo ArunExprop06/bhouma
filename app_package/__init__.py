@@ -28,6 +28,7 @@ def create_app():
     from app_package.routes.comments import comments_bp
     from app_package.routes.analytics import analytics_bp
     from app_package.routes.admin import admin_bp
+    from app_package.routes.prospecting import prospecting_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -37,6 +38,7 @@ def create_app():
     app.register_blueprint(comments_bp)
     app.register_blueprint(analytics_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(prospecting_bp)
 
     # Create tables
     with app.app_context():
