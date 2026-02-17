@@ -146,12 +146,12 @@ def publish_text(org_urn, token, text):
     raise Exception(data.get('message', f'Publish failed ({resp.status_code})'))
 
 
-def publish_image(org_urn, token, text, image_path):
+def publish_image(author_urn, token, text, image_path):
     """Upload image then publish post with it."""
     # Step 1: Initialize upload
     init_payload = {
         'initializeUploadRequest': {
-            'owner': org_urn,
+            'owner': author_urn,
         }
     }
     resp = requests.post(
@@ -161,7 +161,11 @@ def publish_image(org_urn, token, text, image_path):
         timeout=15,
     )
     if resp.status_code not in (200, 201):
-        raise Exception('Image upload init failed')
+        print(f'[LinkedIn] Image init failed ({resp.status_code}): {resp.text}')
+        # Fallback: publish as text-only post
+        print('[LinkedIn] Falling back to text-only post')
+        return publish_text(author_urn, token, text)
+
     upload_data = resp.json().get('value', {})
     upload_url = upload_data.get('uploadUrl')
     image_urn = upload_data.get('image')
@@ -172,11 +176,12 @@ def publish_image(org_urn, token, text, image_path):
             'Authorization': f'Bearer {token}',
         }, timeout=60)
     if resp.status_code not in (200, 201):
-        raise Exception('Image upload failed')
+        print(f'[LinkedIn] Image upload failed ({resp.status_code}): {resp.text}')
+        return publish_text(author_urn, token, text)
 
     # Step 3: Create post with image
     payload = {
-        'author': org_urn,
+        'author': author_urn,
         'commentary': text,
         'visibility': 'PUBLIC',
         'distribution': {
