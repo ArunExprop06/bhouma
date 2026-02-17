@@ -129,10 +129,17 @@ def callback_instagram():
 
 
 # ─── LinkedIn OAuth ───────────────────────────────────────────────
+@accounts_bp.route('/debug/linkedin')
+@login_required
+def debug_linkedin():
+    redirect_uri = current_app.config['BASE_URL'].rstrip('/') + '/accounts/callback/linkedin'
+    return f'BASE_URL: {current_app.config["BASE_URL"]}<br>redirect_uri: {redirect_uri}<br>CLIENT_ID: {current_app.config["LINKEDIN_CLIENT_ID"]}'
+
+
 @accounts_bp.route('/connect/linkedin')
 @login_required
 def connect_linkedin():
-    redirect_uri = current_app.config['BASE_URL'] + '/accounts/callback/linkedin'
+    redirect_uri = current_app.config['BASE_URL'].rstrip('/') + '/accounts/callback/linkedin'
     auth_url = li_svc.get_auth_url(redirect_uri, state='bhouma')
     return redirect(auth_url)
 
@@ -145,7 +152,7 @@ def callback_linkedin():
         flash('LinkedIn authorization cancelled.', 'warning')
         return redirect(url_for('accounts.list_accounts'))
     try:
-        redirect_uri = current_app.config['BASE_URL'] + '/accounts/callback/linkedin'
+        redirect_uri = current_app.config['BASE_URL'].rstrip('/') + '/accounts/callback/linkedin'
         tokens = li_svc.exchange_code(code, redirect_uri)
         access_token = tokens['access_token']
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=tokens['expires_in'])

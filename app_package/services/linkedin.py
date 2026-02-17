@@ -1,5 +1,6 @@
 """LinkedIn REST API service."""
 import requests
+from urllib.parse import quote
 from flask import current_app
 
 API_URL = 'https://api.linkedin.com'
@@ -11,7 +12,7 @@ def get_auth_url(redirect_uri, state=''):
     return (
         f'https://www.linkedin.com/oauth/v2/authorization'
         f'?response_type=code&client_id={client_id}'
-        f'&redirect_uri={redirect_uri}&scope={scopes}'
+        f'&redirect_uri={quote(redirect_uri, safe="")}&scope={quote(scopes)}'
         f'&state={state}'
     )
 
