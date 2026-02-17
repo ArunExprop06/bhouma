@@ -1,4 +1,4 @@
-"""LinkedIn REST API service."""
+"""LinkedIn API service — uses v2 endpoints for personal profile posting."""
 import requests
 from urllib.parse import quote
 from flask import current_app
@@ -51,12 +51,11 @@ def refresh_access_token(refresh_token):
     return data
 
 
-def _headers(token):
+def _v2_headers(token):
     return {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
         'X-Restli-Protocol-Version': '2.0.0',
-        'LinkedIn-Version': '202405',
     }
 
 
@@ -81,15 +80,18 @@ def get_user_profile(token):
 def get_organization_pages(token):
     """Get organization pages the user administers."""
     resp = requests.get(
-        f'{API_URL}/rest/organizationAcls',
-        params={'q': 'roleAssignee', 'role': 'ADMINISTRATOR', 'state': 'APPROVED'},
-        headers=_headers(token),
+        f'{API_URL}/v2/organizationalEntityAcls',
+        params={'q': 'roleAssignee', 'role': 'ADMINISTRATOR', 'state': 'APPROVED',
+                'projection': '(elements*(organizationalTarget))'},
+        headers=_v2_headers(token),
         timeout=15,
     )
+    if resp.status_code != 200:
+        return []
     data = resp.json()
     orgs = []
     for item in data.get('elements', []):
-        org_urn = item.get('organization')
+        org_urn = item.get('organizationalTarget')
         if org_urn:
             org_id = org_urn.split(':')[-1]
             org_info = get_organization_info(org_id, token)
@@ -101,8 +103,8 @@ def get_organization_pages(token):
 def get_organization_info(org_id, token):
     """Get organization details."""
     resp = requests.get(
-        f'{API_URL}/rest/organizations/{org_id}',
-        headers=_headers(token),
+        f'{API_URL}/v2/organizations/{org_id}',
+        headers=_v2_headers(token),
         timeout=15,
     )
     if resp.status_code != 200:
@@ -120,55 +122,70 @@ def get_organization_info(org_id, token):
     }
 
 
-def publish_text(org_urn, token, text):
-    """Publish a text post on behalf of an organization."""
+def publish_text(author_urn, token, text):
+    """Publish a text post using UGC API (v2)."""
     payload = {
-        'author': org_urn,
-        'commentary': text,
-        'visibility': 'PUBLIC',
-        'distribution': {
-            'feedDistribution': 'MAIN_FEED',
-            'targetEntities': [],
-            'thirdPartyDistributionChannels': [],
-        },
+        'author': author_urn,
         'lifecycleState': 'PUBLISHED',
+        'specificContent': {
+            'com.linkedin.ugc.ShareContent': {
+                'shareCommentary': {
+                    'text': text,
+                },
+                'shareMediaCategory': 'NONE',
+            }
+        },
+        'visibility': {
+            'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+        },
     }
     resp = requests.post(
-        f'{API_URL}/rest/posts',
+        f'{API_URL}/v2/ugcPosts',
         json=payload,
-        headers=_headers(token),
+        headers=_v2_headers(token),
         timeout=30,
     )
+    print(f'[LinkedIn] publish_text status={resp.status_code} body={resp.text[:500]}')
     if resp.status_code in (200, 201):
-        post_header = resp.headers.get('x-restli-id', '')
-        return post_header or resp.json().get('id', '')
+        return resp.json().get('id', '')
     data = resp.json() if resp.content else {}
     raise Exception(data.get('message', f'Publish failed ({resp.status_code})'))
 
 
 def publish_image(author_urn, token, text, image_path):
-    """Upload image then publish post with it."""
-    # Step 1: Initialize upload
-    init_payload = {
-        'initializeUploadRequest': {
+    """Upload image then publish post using UGC API (v2)."""
+    # Step 1: Register image upload
+    register_payload = {
+        'registerUploadRequest': {
+            'recipes': ['urn:li:digitalmediaRecipe:feedshare-image'],
             'owner': author_urn,
+            'serviceRelationships': [{
+                'relationshipType': 'OWNER',
+                'identifier': 'urn:li:userGeneratedContent',
+            }],
         }
     }
     resp = requests.post(
-        f'{API_URL}/rest/images?action=initializeUpload',
-        json=init_payload,
-        headers=_headers(token),
+        f'{API_URL}/v2/assets?action=registerUpload',
+        json=register_payload,
+        headers=_v2_headers(token),
         timeout=15,
     )
     if resp.status_code not in (200, 201):
-        print(f'[LinkedIn] Image init failed ({resp.status_code}): {resp.text}')
-        # Fallback: publish as text-only post
+        print(f'[LinkedIn] Image register failed ({resp.status_code}): {resp.text}')
         print('[LinkedIn] Falling back to text-only post')
         return publish_text(author_urn, token, text)
 
     upload_data = resp.json().get('value', {})
-    upload_url = upload_data.get('uploadUrl')
-    image_urn = upload_data.get('image')
+    upload_mechanism = upload_data.get('uploadMechanism', {})
+    upload_url = upload_mechanism.get(
+        'com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest', {}
+    ).get('uploadUrl')
+    asset = upload_data.get('asset', '')
+
+    if not upload_url:
+        print('[LinkedIn] No upload URL returned, falling back to text')
+        return publish_text(author_urn, token, text)
 
     # Step 2: Upload binary
     with open(image_path, 'rb') as f:
@@ -182,28 +199,32 @@ def publish_image(author_urn, token, text, image_path):
     # Step 3: Create post with image
     payload = {
         'author': author_urn,
-        'commentary': text,
-        'visibility': 'PUBLIC',
-        'distribution': {
-            'feedDistribution': 'MAIN_FEED',
-            'targetEntities': [],
-            'thirdPartyDistributionChannels': [],
-        },
-        'content': {
-            'media': {
-                'id': image_urn,
+        'lifecycleState': 'PUBLISHED',
+        'specificContent': {
+            'com.linkedin.ugc.ShareContent': {
+                'shareCommentary': {
+                    'text': text,
+                },
+                'shareMediaCategory': 'IMAGE',
+                'media': [{
+                    'status': 'READY',
+                    'media': asset,
+                }],
             }
         },
-        'lifecycleState': 'PUBLISHED',
+        'visibility': {
+            'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+        },
     }
     resp = requests.post(
-        f'{API_URL}/rest/posts',
+        f'{API_URL}/v2/ugcPosts',
         json=payload,
-        headers=_headers(token),
+        headers=_v2_headers(token),
         timeout=30,
     )
+    print(f'[LinkedIn] publish_image status={resp.status_code} body={resp.text[:500]}')
     if resp.status_code in (200, 201):
-        return resp.headers.get('x-restli-id', '') or resp.json().get('id', '')
+        return resp.json().get('id', '')
     data = resp.json() if resp.content else {}
     raise Exception(data.get('message', f'Image post failed ({resp.status_code})'))
 
@@ -211,8 +232,8 @@ def publish_image(author_urn, token, text, image_path):
 def get_post_comments(post_urn, token):
     """Get comments on a LinkedIn post."""
     resp = requests.get(
-        f'{API_URL}/rest/socialActions/{post_urn}/comments',
-        headers=_headers(token),
+        f'{API_URL}/v2/socialActions/{post_urn}/comments',
+        headers=_v2_headers(token),
         timeout=15,
     )
     if resp.status_code != 200:
@@ -230,9 +251,9 @@ def reply_to_comment(post_urn, token, message, parent_comment=None):
     if parent_comment:
         payload['parentComment'] = parent_comment
     resp = requests.post(
-        f'{API_URL}/rest/socialActions/{post_urn}/comments',
+        f'{API_URL}/v2/socialActions/{post_urn}/comments',
         json=payload,
-        headers=_headers(token),
+        headers=_v2_headers(token),
         timeout=15,
     )
     if resp.status_code in (200, 201):
@@ -243,9 +264,9 @@ def reply_to_comment(post_urn, token, message, parent_comment=None):
 def get_org_followers(org_id, token):
     """Get follower statistics for an organization."""
     resp = requests.get(
-        f'{API_URL}/rest/organizationalEntityFollowerStatistics',
+        f'{API_URL}/v2/organizationalEntityFollowerStatistics',
         params={'q': 'organizationalEntity', 'organizationalEntity': f'urn:li:organization:{org_id}'},
-        headers=_headers(token),
+        headers=_v2_headers(token),
         timeout=15,
     )
     if resp.status_code != 200:
@@ -258,9 +279,9 @@ def get_org_followers(org_id, token):
 def get_share_statistics(org_id, token):
     """Get share/post statistics for an organization."""
     resp = requests.get(
-        f'{API_URL}/rest/organizationalEntityShareStatistics',
+        f'{API_URL}/v2/organizationalEntityShareStatistics',
         params={'q': 'organizationalEntity', 'organizationalEntity': f'urn:li:organization:{org_id}'},
-        headers=_headers(token),
+        headers=_v2_headers(token),
         timeout=15,
     )
     if resp.status_code != 200:
