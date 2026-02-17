@@ -212,7 +212,8 @@ def callback_linkedin():
 def disconnect(account_id):
     account = db.session.get(SocialAccount, account_id)
     if account:
-        account.is_active = False
+        name = account.account_name
+        db.session.delete(account)
         db.session.commit()
-        flash(f'Disconnected {account.account_name}.', 'info')
+        flash(f'Disconnected and removed {name}.', 'info')
     return redirect(url_for('accounts.list_accounts'))

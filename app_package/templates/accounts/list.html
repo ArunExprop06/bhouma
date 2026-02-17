@@ -39,8 +39,8 @@
                 </div>
             </div>
             <form method="POST" action="{{ url_for('accounts.disconnect', account_id=acc.id) }}">
-                <button type="submit" class="btn btn-sm btn-outline-danger" title="Disconnect" onclick="return confirm('Disconnect {{ acc.account_name }}?')">
-                    <i class="bi bi-x-lg"></i>
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Disconnect" onclick="return confirm('Disconnect and remove {{ acc.account_name }}?')">
+                    <i class="bi bi-x-lg me-1"></i> Disconnect
                 </button>
             </form>
         </div>
