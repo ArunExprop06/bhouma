@@ -126,7 +126,7 @@ def publish_post(post):
                     continue
 
             elif account.platform == 'linkedin':
-                org_urn = account.get_extra('org_urn') or f'urn:li:organization:{account.platform_account_id}'
+                org_urn = account.get_extra('org_urn') or f'urn:li:person:{account.platform_account_id}'
                 if post.image:
                     platform_post_id = li_svc.publish_image(
                         org_urn, account.access_token, post.content, post.image)
