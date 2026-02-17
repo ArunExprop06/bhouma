@@ -148,37 +148,50 @@ def callback_linkedin():
         redirect_uri = current_app.config['BASE_URL'] + '/accounts/callback/linkedin'
         tokens = li_svc.exchange_code(code, redirect_uri)
         access_token = tokens['access_token']
-        orgs = li_svc.get_organization_pages(access_token)
-        if not orgs:
-            flash('No LinkedIn Company Pages found.', 'warning')
-            return redirect(url_for('accounts.list_accounts'))
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=tokens['expires_in'])
-        for org in orgs:
+
+        # Try org pages first, fall back to personal profile
+        profiles = []
+        try:
+            profiles = li_svc.get_organization_pages(access_token)
+        except Exception:
+            pass
+
+        if not profiles:
+            user_profile = li_svc.get_user_profile(access_token)
+            if user_profile:
+                profiles = [user_profile]
+
+        if not profiles:
+            flash('Could not retrieve LinkedIn profile.', 'warning')
+            return redirect(url_for('accounts.list_accounts'))
+
+        for prof in profiles:
             existing = db.session.query(SocialAccount).filter_by(
-                platform='linkedin', platform_account_id=org['id']
+                platform='linkedin', platform_account_id=prof['id']
             ).first()
             if existing:
                 existing.access_token = access_token
                 existing.refresh_token = tokens.get('refresh_token', '')
                 existing.token_expires_at = expires_at
-                existing.account_name = org['name']
+                existing.account_name = prof['name']
                 existing.is_active = True
             else:
                 account = SocialAccount(
                     user_id=current_user.id,
                     platform='linkedin',
-                    platform_account_id=org['id'],
-                    page_id=org['id'],
-                    account_name=org['name'],
-                    account_image_url=org.get('logo_url', ''),
+                    platform_account_id=prof['id'],
+                    page_id=prof['id'],
+                    account_name=prof['name'],
+                    account_image_url=prof.get('logo_url', ''),
                     access_token=access_token,
                     refresh_token=tokens.get('refresh_token', ''),
                     token_expires_at=expires_at,
                 )
-                account.set_extra('org_urn', org['urn'])
+                account.set_extra('org_urn', prof['urn'])
                 db.session.add(account)
         db.session.commit()
-        flash(f'Connected {len(orgs)} LinkedIn Page(s)!', 'success')
+        flash(f'Connected {len(profiles)} LinkedIn account(s)!', 'success')
     except Exception as e:
         flash(f'LinkedIn connection failed: {e}', 'danger')
     return redirect(url_for('accounts.list_accounts'))

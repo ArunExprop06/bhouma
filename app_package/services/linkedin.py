@@ -7,7 +7,7 @@ API_URL = 'https://api.linkedin.com'
 
 def get_auth_url(redirect_uri, state=''):
     client_id = current_app.config['LINKEDIN_CLIENT_ID']
-    scopes = 'w_organization_social r_organization_social rw_organization_admin r_organization_followers'
+    scopes = 'openid profile email w_member_social'
     return (
         f'https://www.linkedin.com/oauth/v2/authorization'
         f'?response_type=code&client_id={client_id}'
@@ -56,6 +56,24 @@ def _headers(token):
         'Content-Type': 'application/json',
         'X-Restli-Protocol-Version': '2.0.0',
         'LinkedIn-Version': '202501',
+    }
+
+
+def get_user_profile(token):
+    """Get the authenticated user's LinkedIn profile."""
+    resp = requests.get(
+        f'{API_URL}/v2/userinfo',
+        headers={'Authorization': f'Bearer {token}'},
+        timeout=15,
+    )
+    if resp.status_code != 200:
+        return None
+    data = resp.json()
+    return {
+        'id': data.get('sub', ''),
+        'name': data.get('name', ''),
+        'logo_url': data.get('picture', ''),
+        'urn': f'urn:li:person:{data.get("sub", "")}',
     }
 
 
