@@ -147,6 +147,15 @@ def connect_linkedin():
 @accounts_bp.route('/callback/linkedin')
 @login_required
 def callback_linkedin():
+    # Debug: log all callback params
+    print(f'[LinkedIn Callback] Full URL: {request.url}')
+    print(f'[LinkedIn Callback] Args: {dict(request.args)}')
+    error = request.args.get('error')
+    error_desc = request.args.get('error_description')
+    if error:
+        print(f'[LinkedIn Callback] ERROR: {error} - {error_desc}')
+        flash(f'LinkedIn error: {error_desc or error}', 'danger')
+        return redirect(url_for('accounts.list_accounts'))
     code = request.args.get('code')
     if not code:
         flash('LinkedIn authorization cancelled.', 'warning')
