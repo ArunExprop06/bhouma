@@ -56,7 +56,7 @@ def _headers(token):
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
         'X-Restli-Protocol-Version': '2.0.0',
-        'LinkedIn-Version': '202501',
+        'LinkedIn-Version': '202405',
     }
 
 
