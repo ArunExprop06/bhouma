@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Connect Account{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Connect a Social Account</h2>
+    <p>Choose a platform to connect</p>
+</div>
+
+<div class="row g-4 justify-content-center">
+    <div class="col-md-4">
+        <a href="{{ url_for('accounts.connect_facebook') }}" class="connect-card facebook">
+            <div class="connect-icon bg-fb">
+                <i class="bi bi-facebook"></i>
+            </div>
+            <h5 class="fw-bold">Facebook Page</h5>
+            <p class="text-muted small mb-0">Connect your Facebook Pages to publish posts, read comments, and view insights.</p>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('accounts.connect_instagram') }}" class="connect-card instagram">
+            <div class="connect-icon bg-ig">
+                <i class="bi bi-instagram"></i>
+            </div>
+            <h5 class="fw-bold">Instagram</h5>
+            <p class="text-muted small mb-0">Connect your Instagram Business account to publish photos, manage comments, and track growth.</p>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('accounts.connect_linkedin') }}" class="connect-card linkedin">
+            <div class="connect-icon bg-li">
+                <i class="bi bi-linkedin"></i>
+            </div>
+            <h5 class="fw-bold">LinkedIn Page</h5>
+            <p class="text-muted small mb-0">Connect your LinkedIn Company Page to share updates, engage followers, and view analytics.</p>
+        </a>
+    </div>
+</div>
+
+<div class="card-custom mt-4">
+    <div class="card-body">
+        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-1"></i> Setup Requirements</h6>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="p-3 rounded" style="background:#e8f4fd;">
+                    <h6 class="fw-bold" style="color:#1877f2;"><i class="bi bi-facebook me-1"></i> Facebook</h6>
+                    <ul class="small mb-0 ps-3">
+                        <li>Meta Developer App with required permissions</li>
+                        <li>Admin access to at least one Facebook Page</li>
+                        <li>App must be in Live mode for production use</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 rounded" style="background:#fde8ee;">
+                    <h6 class="fw-bold" style="color:#e4405f;"><i class="bi bi-instagram me-1"></i> Instagram</h6>
+                    <ul class="small mb-0 ps-3">
+                        <li>Instagram Business or Creator account</li>
+                        <li>Linked to a Facebook Page</li>
+                        <li>Same Meta Developer App as Facebook</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 rounded" style="background:#e6f0fa;">
+                    <h6 class="fw-bold" style="color:#0a66c2;"><i class="bi bi-linkedin me-1"></i> LinkedIn</h6>
+                    <ul class="small mb-0 ps-3">
+                        <li>LinkedIn Developer App with Marketing APIs</li>
+                        <li>Admin of a LinkedIn Company Page</li>
+                        <li>App authorized for organization management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

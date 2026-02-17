@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Comments{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+    <div>
+        <h2>Comment Inbox</h2>
+        <p>View and reply to comments across all platforms</p>
+    </div>
+    <form method="POST" action="{{ url_for('comments.fetch_comments') }}">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-arrow-clockwise me-1"></i> Fetch New Comments
+        </button>
+    </form>
+</div>
+
+<!-- Filters -->
+<div class="d-flex gap-2 mb-3">
+    <a href="{{ url_for('comments.inbox') }}" class="btn btn-sm {{ 'btn-primary' if not platform_filter else 'btn-outline-secondary' }}">All</a>
+    <a href="{{ url_for('comments.inbox', platform='facebook') }}" class="btn btn-sm {{ 'btn-primary' if platform_filter == 'facebook' else 'btn-outline-secondary' }}">
+        <i class="bi bi-facebook me-1"></i>Facebook
+    </a>
+    <a href="{{ url_for('comments.inbox', platform='instagram') }}" class="btn btn-sm {{ 'btn-primary' if platform_filter == 'instagram' else 'btn-outline-secondary' }}">
+        <i class="bi bi-instagram me-1"></i>Instagram
+    </a>
+    <a href="{{ url_for('comments.inbox', platform='linkedin') }}" class="btn btn-sm {{ 'btn-primary' if platform_filter == 'linkedin' else 'btn-outline-secondary' }}">
+        <i class="bi bi-linkedin me-1"></i>LinkedIn
+    </a>
+</div>
+
+{% if comments %}
+<div class="row">
+    <div class="col-lg-8">
+        {% for comment in comments %}
+        <div class="comment-item {{ comment.post_result.platform if comment.post_result else '' }}">
+            <div class="d-flex align-items-start gap-3">
+                <div>
+                    {% if comment.author_image %}
+                    <img src="{{ comment.author_image }}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" alt="">
+                    {% else %}
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width:36px;height:36px;color:#fff;font-size:0.8rem;">
+                        {{ comment.author_name[0]|upper if comment.author_name else '?' }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="comment-author">{{ comment.author_name or 'Unknown' }}</span>
+                        {% if comment.post_result %}
+                        <span class="platform-badge {{ comment.post_result.platform }}" style="font-size:0.6rem;padding:0.1rem 0.4rem;">
+                            <i class="bi bi-{{ comment.post_result.platform }}"></i>
+                        </span>
+                        {% endif %}
+                        {% if comment.replied %}
+                        <span class="badge bg-success" style="font-size:0.6rem;">Replied</span>
+                        {% endif %}
+                    </div>
+                    <p class="comment-text mb-1">{{ comment.content }}</p>
+                    <div class="comment-meta">
+                        {{ comment.created_at.strftime('%b %d, %Y %H:%M') }}
+                    </div>
+
+                    {% if comment.replied and comment.reply_content %}
+                    <div class="mt-2 p-2 rounded" style="background:#f0f2f5;font-size:0.85rem;">
+                        <span class="fw-semibold text-primary-custom" style="font-size:0.8rem;">Your reply:</span>
+                        <p class="mb-0">{{ comment.reply_content }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if not comment.replied %}
+                    <form method="POST" action="{{ url_for('comments.reply', comment_id=comment.id) }}" class="mt-2">
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="reply" class="form-control" placeholder="Write a reply..." required>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-reply me-1"></i>Reply
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="card-custom">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="bi bi-chat-dots d-block"></i>
+            <h5>No comments yet</h5>
+            <p class="text-muted">Click "Fetch New Comments" to load comments from your published posts.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

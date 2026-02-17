@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Overview of your social media activity</p>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-primary-gradient">
+                    <i class="bi bi-plug"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ accounts|length }}</div>
+                    <div class="stat-label">Connected Accounts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon" style="background:#10b981;">
+                    <i class="bi bi-send-check"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ published_posts }}</div>
+                    <div class="stat-label">Published Posts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon" style="background:#f59e0b;">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ scheduled_posts }}</div>
+                    <div class="stat-label">Scheduled</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon" style="background:#8b5cf6;">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <div>
+                    <div class="stat-value">{{ total_comments }}</div>
+                    <div class="stat-label">Comments</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Connected Accounts -->
+    <div class="col-lg-5">
+        <div class="card-custom">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-plug me-2"></i>Connected Accounts</span>
+                <a href="{{ url_for('accounts.connect') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg"></i> Connect
+                </a>
+            </div>
+            <div class="card-body">
+                {% if accounts %}
+                {% for acc in accounts %}
+                <div class="d-flex align-items-center gap-3 {% if not loop.last %}mb-3 pb-3 border-bottom{% endif %}">
+                    <div class="position-relative">
+                        {% if acc.account_image_url %}
+                        <img src="{{ acc.account_image_url }}" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" alt="">
+                        {% else %}
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;background:{{ acc.platform_color }};color:#fff;">
+                            <i class="bi {{ acc.platform_icon }}"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="fw-semibold" style="font-size:0.9rem;">{{ acc.account_name }}</div>
+                        <span class="platform-badge {{ acc.platform }}" style="font-size:0.65rem;padding:0.15rem 0.5rem;">
+                            <i class="bi {{ acc.platform_icon }}"></i> {{ acc.platform|title }}
+                        </span>
+                    </div>
+                    <div class="ms-auto">
+                        <span class="status-dot" style="background:#10b981;"></span>
+                        <span class="text-muted" style="font-size:0.75rem;">Active</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-plug d-block"></i>
+                    <p class="mb-2">No accounts connected yet</p>
+                    <a href="{{ url_for('accounts.connect') }}" class="btn btn-sm btn-primary">Connect Account</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Posts -->
+    <div class="col-lg-7">
+        <div class="card-custom">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-file-earmark-text me-2"></i>Recent Posts</span>
+                <a href="{{ url_for('compose.compose') }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-pencil-square"></i> New Post
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_posts %}
+                <div class="table-responsive">
+                    <table class="table table-custom mb-0">
+                        <thead>
+                            <tr>
+                                <th>Content</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for post in recent_posts %}
+                            <tr>
+                                <td>
+                                    <div class="truncate-2" style="max-width:280px;">{{ post.content[:80] }}{% if post.content|length > 80 %}...{% endif %}</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ post.status_color }}">{{ post.status|title }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted" style="font-size:0.8rem;">{{ post.created_at.strftime('%b %d, %H:%M') }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-file-earmark-text d-block"></i>
+                    <p class="mb-2">No posts yet</p>
+                    <a href="{{ url_for('compose.compose') }}" class="btn btn-sm btn-primary">Create Your First Post</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mt-2">
+    <div class="col-md-4">
+        <a href="{{ url_for('compose.compose') }}" class="stat-card d-block text-decoration-none text-center py-4">
+            <i class="bi bi-pencil-square text-primary-custom" style="font-size:1.5rem;"></i>
+            <div class="fw-semibold mt-2">Compose Post</div>
+            <small class="text-muted">Create & publish content</small>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('comments.inbox') }}" class="stat-card d-block text-decoration-none text-center py-4">
+            <i class="bi bi-chat-dots" style="font-size:1.5rem;color:#8b5cf6;"></i>
+            <div class="fw-semibold mt-2">Comment Inbox</div>
+            <small class="text-muted">View & reply to comments</small>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('analytics.overview') }}" class="stat-card d-block text-decoration-none text-center py-4">
+            <i class="bi bi-bar-chart-line" style="font-size:1.5rem;color:#10b981;"></i>
+            <div class="fw-semibold mt-2">Analytics</div>
+            <small class="text-muted">Track performance & growth</small>
+        </a>
+    </div>
+</div>
+{% endblock %}

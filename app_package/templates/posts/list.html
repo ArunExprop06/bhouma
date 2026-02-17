@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Posts{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+    <div>
+        <h2>Posts</h2>
+        <p>All your published, scheduled, and draft posts</p>
+    </div>
+    <a href="{{ url_for('compose.compose') }}" class="btn btn-primary">
+        <i class="bi bi-pencil-square me-1"></i> New Post
+    </a>
+</div>
+
+{% if posts %}
+<div class="card-custom">
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead>
+                <tr>
+                    <th style="width:50%;">Content</th>
+                    <th>Platforms</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in posts %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if post.image %}
+                            <img src="{{ url_for('uploaded_file', filename=post.image.split('/')[-1].split('\\')[-1]) }}" class="rounded" style="width:40px;height:40px;object-fit:cover;" alt="">
+                            {% endif %}
+                            <div class="truncate-2" style="max-width:320px;">{{ post.content[:100] }}{% if post.content|length > 100 %}...{% endif %}</div>
+                        </div>
+                    </td>
+                    <td>
+                        {% for result in post.results %}
+                        <span class="platform-badge {{ result.platform }}" style="font-size:0.65rem;padding:0.1rem 0.45rem;">
+                            <i class="bi bi-{{ result.platform }}"></i>
+                        </span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ post.status_color }}">{{ post.status|title }}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted" style="font-size:0.8rem;">
+                            {% if post.published_at %}
+                            {{ post.published_at.strftime('%b %d, %H:%M') }}
+                            {% elif post.scheduled_at %}
+                            <i class="bi bi-clock me-1"></i>{{ post.scheduled_at.strftime('%b %d, %H:%M') }}
+                            {% else %}
+                            {{ post.created_at.strftime('%b %d, %H:%M') }}
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card-custom">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="bi bi-file-earmark-text d-block"></i>
+            <h5>No posts yet</h5>
+            <p class="text-muted">Create your first post to get started.</p>
+            <a href="{{ url_for('compose.compose') }}" class="btn btn-primary">
+                <i class="bi bi-pencil-square me-1"></i> Create Post
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

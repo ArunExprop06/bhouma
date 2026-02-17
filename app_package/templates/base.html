@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bhouma{% endblock %} - Social Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar Toggle (Mobile) -->
+    <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('show')">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-broadcast"></i> Bhouma</h4>
+            <small>Social Media Dashboard</small>
+        </div>
+
+        <ul class="sidebar-nav">
+            <li class="nav-label">Main</li>
+            <li>
+                <a href="{{ url_for('dashboard.index') }}" class="{{ 'active' if request.endpoint == 'dashboard.index' }}">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('compose.compose') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('compose.') }}">
+                    <i class="bi bi-pencil-square"></i> Compose
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('posts.list_posts') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('posts.') }}">
+                    <i class="bi bi-file-earmark-text"></i> Posts
+                </a>
+            </li>
+
+            <li class="nav-label">Engagement</li>
+            <li>
+                <a href="{{ url_for('comments.inbox') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('comments.') }}">
+                    <i class="bi bi-chat-dots"></i> Comments
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('analytics.overview') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('analytics.') }}">
+                    <i class="bi bi-bar-chart-line"></i> Analytics
+                </a>
+            </li>
+
+            <li class="nav-label">Settings</li>
+            <li>
+                <a href="{{ url_for('accounts.list_accounts') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('accounts.') }}">
+                    <i class="bi bi-plug"></i> Accounts
+                </a>
+            </li>
+            {% if current_user.is_admin %}
+            <li>
+                <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin.') }}">
+                    <i class="bi bi-shield-lock"></i> Admin
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+
+        <div class="sidebar-user">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-primary-gradient d-flex align-items-center justify-content-center" style="width:36px;height:36px;color:#fff;font-weight:700;font-size:0.85rem;">
+                    {{ current_user.name[0]|upper }}
+                </div>
+                <div>
+                    <div class="user-name">{{ current_user.name }}</div>
+                    <div class="user-email">{{ current_user.email }}</div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="ms-auto text-white-50" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-3">
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

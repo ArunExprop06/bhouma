@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Settings</h2>
+    <p>Application configuration</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card-custom">
+            <div class="card-header">
+                <i class="bi bi-gear me-2"></i>API Configuration
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Meta App ID</label>
+                    <div class="form-control bg-light" style="font-size:0.85rem;">
+                        {{ config.META_APP_ID or 'Not configured' }}
+                    </div>
+                    <div class="form-text">Set via <code>META_APP_ID</code> environment variable</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">LinkedIn Client ID</label>
+                    <div class="form-control bg-light" style="font-size:0.85rem;">
+                        {{ config.LINKEDIN_CLIENT_ID or 'Not configured' }}
+                    </div>
+                    <div class="form-text">Set via <code>LINKEDIN_CLIENT_ID</code> environment variable</div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label small fw-semibold">Base URL</label>
+                    <div class="form-control bg-light" style="font-size:0.85rem;">
+                        {{ config.BASE_URL }}
+                    </div>
+                    <div class="form-text">Used for OAuth redirect URIs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card-custom">
+            <div class="card-header">
+                <i class="bi bi-plug me-2"></i>All Connected Accounts
+            </div>
+            <div class="card-body">
+                {% if accounts %}
+                {% for acc in accounts %}
+                <div class="d-flex align-items-center gap-2 {% if not loop.last %}mb-2 pb-2 border-bottom{% endif %}">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:{{ acc.platform_color }};color:#fff;font-size:0.7rem;">
+                        <i class="bi {{ acc.platform_icon }}"></i>
+                    </span>
+                    <div class="flex-grow-1">
+                        <span class="fw-semibold" style="font-size:0.85rem;">{{ acc.account_name }}</span>
+                        <span class="text-muted small"> - {{ acc.user.name }}</span>
+                    </div>
+                    <span class="badge {{ 'bg-success' if acc.is_active else 'bg-secondary' }}">
+                        {{ 'Active' if acc.is_active else 'Inactive' }}
+                    </span>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center mb-0">No accounts connected.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-custom mt-3">
+            <div class="card-header">
+                <i class="bi bi-clock-history me-2"></i>OAuth Redirect URIs
+            </div>
+            <div class="card-body small">
+                <p class="mb-2">Configure these in your Meta and LinkedIn developer apps:</p>
+                <div class="p-2 rounded mb-1" style="background:#f0f2f5;word-break:break-all;">
+                    <code>{{ config.BASE_URL }}/accounts/callback/facebook</code>
+                </div>
+                <div class="p-2 rounded mb-1" style="background:#f0f2f5;word-break:break-all;">
+                    <code>{{ config.BASE_URL }}/accounts/callback/instagram</code>
+                </div>
+                <div class="p-2 rounded" style="background:#f0f2f5;word-break:break-all;">
+                    <code>{{ config.BASE_URL }}/accounts/callback/linkedin</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

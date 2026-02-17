@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Compose Post{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Compose Post</h2>
+    <p>Create and publish content to your social accounts</p>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+    <div class="row g-4">
+        <!-- Editor Column -->
+        <div class="col-lg-8">
+            <div class="card-custom">
+                <div class="card-header">
+                    <i class="bi bi-pencil-square me-2"></i>Post Content
+                </div>
+                <div class="card-body p-0">
+                    <div class="compose-editor">
+                        <textarea name="content" class="form-control" placeholder="What would you like to share?" rows="6" required>{{ request.form.get('content', '') }}</textarea>
+                        <div class="compose-toolbar">
+                            <label class="btn btn-sm btn-outline-secondary mb-0" for="imageUpload">
+                                <i class="bi bi-image me-1"></i> Image
+                            </label>
+                            <input type="file" name="image" id="imageUpload" accept="image/*" class="d-none" onchange="previewImage(this)">
+                            <span class="text-muted ms-2 small" id="charCount">0 characters</span>
+                        </div>
+                    </div>
+                    <div id="imagePreviewContainer" class="p-3 d-none">
+                        <div class="position-relative d-inline-block">
+                            <img id="imagePreview" class="rounded" style="max-height:200px;" alt="">
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle" onclick="clearImage()" style="width:24px;height:24px;padding:0;font-size:0.7rem;">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="card-custom mt-3">
+                <div class="card-header">
+                    <i class="bi bi-calendar-event me-2"></i>Schedule (Optional)
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Date</label>
+                            <input type="date" name="schedule_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Time (UTC)</label>
+                            <input type="time" name="schedule_time" class="form-control">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- Select Accounts -->
+            <div class="card-custom">
+                <div class="card-header">
+                    <i class="bi bi-send me-2"></i>Publish To
+                </div>
+                <div class="card-body">
+                    {% if accounts %}
+                    {% for acc in accounts %}
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="accounts" value="{{ acc.id }}" class="form-check-input" id="acc_{{ acc.id }}" checked>
+                        <label class="form-check-label d-flex align-items-center gap-2" for="acc_{{ acc.id }}">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:{{ acc.platform_color }};color:#fff;font-size:0.75rem;">
+                                <i class="bi {{ acc.platform_icon }}"></i>
+                            </span>
+                            <span>
+                                <span class="fw-semibold" style="font-size:0.85rem;">{{ acc.account_name }}</span>
+                                <span class="text-muted d-block" style="font-size:0.7rem;">{{ acc.platform|title }}</span>
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted small mb-2">No accounts connected</p>
+                        <a href="{{ url_for('accounts.connect') }}" class="btn btn-sm btn-outline-primary">Connect Account</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card-custom mt-3">
+                <div class="card-body d-grid gap-2">
+                    <button type="submit" name="action" value="publish" class="btn btn-primary py-2">
+                        <i class="bi bi-send-fill me-1"></i> Publish Now
+                    </button>
+                    <button type="submit" name="action" value="schedule" class="btn btn-outline-warning py-2">
+                        <i class="bi bi-clock me-1"></i> Schedule Post
+                    </button>
+                    <button type="submit" name="action" value="draft" class="btn btn-outline-secondary py-2">
+                        <i class="bi bi-file-earmark me-1"></i> Save as Draft
+                    </button>
+                </div>
+            </div>
+
+            <!-- Platform Notes -->
+            <div class="card-custom mt-3">
+                <div class="card-header" style="font-size:0.85rem;">
+                    <i class="bi bi-lightbulb me-2"></i>Platform Notes
+                </div>
+                <div class="card-body small text-muted">
+                    <p class="mb-2"><i class="bi bi-facebook text-primary me-1"></i> <strong>Facebook:</strong> Text + optional image. No character limit.</p>
+                    <p class="mb-2"><i class="bi bi-instagram me-1" style="color:#e4405f;"></i> <strong>Instagram:</strong> Image required. Max 2,200 characters.</p>
+                    <p class="mb-0"><i class="bi bi-linkedin me-1" style="color:#0a66c2;"></i> <strong>LinkedIn:</strong> Text + optional image. Max 3,000 characters.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const textarea = document.querySelector('textarea[name="content"]');
+const charCount = document.getElementById('charCount');
+textarea.addEventListener('input', function() {
+    charCount.textContent = this.value.length + ' characters';
+});
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('imagePreviewContainer').classList.remove('d-none');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function clearImage() {
+    document.getElementById('imageUpload').value = '';
+    document.getElementById('imagePreviewContainer').classList.add('d-none');
+}
+</script>
+{% endblock %}

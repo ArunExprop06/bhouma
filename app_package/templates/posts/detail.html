@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Post Detail{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <a href="{{ url_for('posts.list_posts') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h2 class="mb-0">Post Detail</h2>
+        <span class="badge bg-{{ post.status_color }} ms-2">{{ post.status|title }}</span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Post Content -->
+    <div class="col-lg-7">
+        <div class="card-custom">
+            <div class="card-header">
+                <i class="bi bi-file-earmark-text me-2"></i>Content
+            </div>
+            <div class="card-body">
+                <p style="white-space:pre-wrap;">{{ post.content }}</p>
+                {% if post.image %}
+                <img src="{{ url_for('uploaded_file', filename=post.image.split('/')[-1].split('\\')[-1]) }}" class="rounded mt-2" style="max-width:100%;max-height:400px;" alt="">
+                {% endif %}
+
+                <hr>
+                <div class="d-flex gap-3 text-muted small">
+                    <span><i class="bi bi-person me-1"></i>{{ post.creator.name }}</span>
+                    <span><i class="bi bi-clock me-1"></i>Created {{ post.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+                    {% if post.scheduled_at %}
+                    <span><i class="bi bi-calendar-event me-1"></i>Scheduled {{ post.scheduled_at.strftime('%b %d, %Y %H:%M') }} UTC</span>
+                    {% endif %}
+                    {% if post.published_at %}
+                    <span><i class="bi bi-send-check me-1"></i>Published {{ post.published_at.strftime('%b %d, %Y %H:%M') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Results -->
+    <div class="col-lg-5">
+        <div class="card-custom">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-diagram-3 me-2"></i>Platform Results</span>
+                {% if post.status == 'failed' %}
+                <form method="POST" action="{{ url_for('posts.republish', post_id=post.id) }}">
+                    <button type="submit" class="btn btn-sm btn-warning">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if results %}
+                {% for r in results %}
+                <div class="d-flex align-items-start gap-3 {% if not loop.last %}mb-3 pb-3 border-bottom{% endif %}">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;min-width:36px;background:{{ r.social_account.platform_color if r.social_account else '#6c757d' }};color:#fff;">
+                        <i class="bi bi-{{ r.platform }}"></i>
+                    </span>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:0.9rem;">
+                            {{ r.social_account.account_name if r.social_account else r.platform|title }}
+                        </div>
+                        {% if r.status == 'success' %}
+                        <span class="badge bg-success">Published</span>
+                        {% if r.platform_post_id %}
+                        <span class="text-muted d-block" style="font-size:0.7rem;">ID: {{ r.platform_post_id[:40] }}...</span>
+                        {% endif %}
+                        <div class="d-flex gap-3 mt-1 text-muted small">
+                            <span><i class="bi bi-heart me-1"></i>{{ r.likes_count }}</span>
+                            <span><i class="bi bi-chat me-1"></i>{{ r.comments_count }}</span>
+                            <span><i class="bi bi-share me-1"></i>{{ r.shares_count }}</span>
+                        </div>
+                        {% else %}
+                        <span class="badge bg-danger">Failed</span>
+                        {% if r.error_message %}
+                        <div class="text-danger small mt-1">{{ r.error_message }}</div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center text-muted py-3">
+                    <p class="mb-0 small">No platform results yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

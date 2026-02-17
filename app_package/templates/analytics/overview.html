@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Analytics</h2>
+    <p>Track your social media performance</p>
+</div>
+
+<!-- Account Selector -->
+<div class="card-custom mb-4">
+    <div class="card-body">
+        <form method="GET" class="d-flex align-items-center gap-3">
+            <label class="fw-semibold small">Select Account:</label>
+            <select name="account_id" class="form-select form-select-sm" style="max-width:300px;" onchange="this.form.submit()">
+                <option value="">-- All Accounts --</option>
+                {% for acc in accounts %}
+                <option value="{{ acc.id }}" {{ 'selected' if selected_account and selected_account.id == acc.id }}>
+                    {{ acc.account_name }} ({{ acc.platform|title }})
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+<!-- Post Engagement Stats from DB -->
+<div class="row g-3 mb-4">
+    {% for stat in post_stats %}
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:40px;height:40px;background:{% if stat[0] == 'facebook' %}#1877f2{% elif stat[0] == 'instagram' %}#e4405f{% else %}#0a66c2{% endif %};color:#fff;">
+                    <i class="bi bi-{{ stat[0] }}"></i>
+                </span>
+                <div class="fw-bold">{{ stat[0]|title }}</div>
+            </div>
+            <div class="d-flex justify-content-between text-center">
+                <div>
+                    <div class="fw-bold" style="font-size:1.25rem;">{{ stat[1] or 0 }}</div>
+                    <div class="text-muted small">Likes</div>
+                </div>
+                <div>
+                    <div class="fw-bold" style="font-size:1.25rem;">{{ stat[2] or 0 }}</div>
+                    <div class="text-muted small">Comments</div>
+                </div>
+                <div>
+                    <div class="fw-bold" style="font-size:1.25rem;">{{ stat[3] or 0 }}</div>
+                    <div class="text-muted small">Shares</div>
+                </div>
+                <div>
+                    <div class="fw-bold" style="font-size:1.25rem;">{{ stat[4] or 0 }}</div>
+                    <div class="text-muted small">Posts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% if not post_stats %}
+    <div class="col-12">
+        <div class="card-custom">
+            <div class="card-body text-center text-muted py-4">
+                <i class="bi bi-bar-chart-line d-block" style="font-size:2rem;opacity:0.4;"></i>
+                <p class="mt-2 mb-0">No engagement data yet. Publish posts to see analytics.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if selected_account %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card-custom">
+            <div class="card-header">
+                <i class="bi bi-graph-up me-2"></i>Platform Insights - {{ selected_account.account_name }}
+            </div>
+            <div class="card-body">
+                {% if insights.get('error') %}
+                <div class="alert alert-warning small">{{ insights.error }}</div>
+                {% elif insights.get('raw') %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr><th>Metric</th><th>Period</th><th>Value</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in insights.raw %}
+                            <tr>
+                                <td class="fw-semibold">{{ item.get('title', item.get('name', '')) }}</td>
+                                <td>{{ item.get('period', '') }}</td>
+                                <td>
+                                    {% if item.get('values') %}
+                                    {{ item['values'][-1].get('value', '') }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% elif insights.get('followers') or insights.get('shares') %}
+                <div class="row g-3">
+                    {% if insights.get('followers') %}
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#f0f2f5;">
+                            <div class="text-muted small">Follower Stats</div>
+                            <div class="fw-bold fs-4">{{ insights.followers.get('followerCountsByAssociationType', [{}])|map(attribute='followerCounts')|map(attribute='organicFollowerCount', default=0)|first if insights.followers.get('followerCountsByAssociationType') else 'N/A' }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if insights.get('shares') %}
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#f0f2f5;">
+                            <div class="text-muted small">Share Statistics</div>
+                            <div class="fw-bold fs-4">{{ insights.shares.get('totalShareStatistics', {}).get('shareCount', 0) }}</div>
+                            <div class="text-muted small">Total Shares</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-0">No insights data available for this account.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card-custom">
+            <div class="card-header">
+                <i class="bi bi-info-circle me-2"></i>Account Info
+            </div>
+            <div class="card-body text-center">
+                {% if selected_account.account_image_url %}
+                <img src="{{ selected_account.account_image_url }}" class="rounded-circle mb-3" style="width:64px;height:64px;object-fit:cover;" alt="">
+                {% else %}
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:64px;height:64px;background:{{ selected_account.platform_color }};color:#fff;font-size:1.5rem;">
+                    <i class="bi {{ selected_account.platform_icon }}"></i>
+                </div>
+                {% endif %}
+                <h5 class="fw-bold mb-1">{{ selected_account.account_name }}</h5>
+                <span class="platform-badge {{ selected_account.platform }}">
+                    <i class="bi {{ selected_account.platform_icon }}"></i> {{ selected_account.platform|title }}
+                </span>
+                <p class="text-muted small mt-2 mb-0">Connected {{ selected_account.connected_at.strftime('%b %d, %Y') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Engagement Chart -->
+<div class="card-custom mt-4">
+    <div class="card-header">
+        <i class="bi bi-pie-chart me-2"></i>Engagement by Platform
+    </div>
+    <div class="card-body">
+        <div style="max-width:400px;margin:0 auto;">
+            <canvas id="engagementChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const stats = {{ post_stats|tojson }};
+if (stats.length > 0) {
+    const labels = stats.map(s => s[0].charAt(0).toUpperCase() + s[0].slice(1));
+    const colors = stats.map(s => {
+        if (s[0] === 'facebook') return '#1877f2';
+        if (s[0] === 'instagram') return '#e4405f';
+        return '#0a66c2';
+    });
+    const data = stats.map(s => (s[1] || 0) + (s[2] || 0) + (s[3] || 0));
+
+    new Chart(document.getElementById('engagementChart'), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 0,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+} else {
+    document.getElementById('engagementChart').parentElement.innerHTML = '<p class="text-muted text-center">No data to display yet.</p>';
+}
+</script>
+{% endblock %}
