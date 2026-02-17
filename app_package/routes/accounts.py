@@ -210,9 +210,12 @@ def callback_linkedin():
 @accounts_bp.route('/disconnect/<int:account_id>', methods=['POST'])
 @login_required
 def disconnect(account_id):
+    from app_package.models import PostResult
     account = db.session.get(SocialAccount, account_id)
     if account:
         name = account.account_name
+        # Delete linked post results first to avoid FK constraint
+        db.session.query(PostResult).filter_by(social_account_id=account.id).delete()
         db.session.delete(account)
         db.session.commit()
         flash(f'Disconnected and removed {name}.', 'info')

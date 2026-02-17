@@ -37,14 +37,15 @@ def overview():
             except Exception:
                 insights['error'] = 'Failed to fetch insights from the platform.'
 
-    # Post-level engagement stats from DB
-    post_stats = db.session.query(
+    # Post-level engagement stats from DB — convert Row objects to plain lists
+    raw_stats = db.session.query(
         PostResult.platform,
         db.func.sum(PostResult.likes_count),
         db.func.sum(PostResult.comments_count),
         db.func.sum(PostResult.shares_count),
         db.func.count(PostResult.id),
     ).filter_by(status='success').group_by(PostResult.platform).all()
+    post_stats = [list(row) for row in raw_stats]
 
     return render_template('analytics/overview.html',
                            accounts=accounts,
