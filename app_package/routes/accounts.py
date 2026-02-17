@@ -129,13 +129,6 @@ def callback_instagram():
 
 
 # ─── LinkedIn OAuth ───────────────────────────────────────────────
-@accounts_bp.route('/debug/linkedin')
-@login_required
-def debug_linkedin():
-    redirect_uri = current_app.config['BASE_URL'].rstrip('/') + '/accounts/callback/linkedin'
-    return f'BASE_URL: {current_app.config["BASE_URL"]}<br>redirect_uri: {redirect_uri}<br>CLIENT_ID: {current_app.config["LINKEDIN_CLIENT_ID"]}'
-
-
 @accounts_bp.route('/connect/linkedin')
 @login_required
 def connect_linkedin():
