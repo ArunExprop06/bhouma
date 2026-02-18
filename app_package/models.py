@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, date, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app_package import db, login_manager
@@ -150,3 +150,78 @@ class Comment(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     replies = db.relationship('Comment', backref=db.backref('parent', remote_side='Comment.id'), lazy=True)
+
+
+class TaskTemplate(db.Model):
+    __tablename__ = 'task_templates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    platform = db.Column(db.String(20), default='general')  # facebook/instagram/linkedin/general
+    is_active = db.Column(db.Boolean, default=True)
+    sort_order = db.Column(db.Integer, default=0)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    instances = db.relationship('DailyTaskInstance', backref='template', lazy=True, cascade='all, delete-orphan')
+
+    @property
+    def platform_icon(self):
+        icons = {
+            'facebook': 'bi-facebook',
+            'instagram': 'bi-instagram',
+            'linkedin': 'bi-linkedin',
+            'general': 'bi-check2-circle',
+        }
+        return icons.get(self.platform, 'bi-check2-circle')
+
+    @property
+    def platform_color(self):
+        colors = {
+            'facebook': '#1877f2',
+            'instagram': '#e4405f',
+            'linkedin': '#0a66c2',
+            'general': '#6c757d',
+        }
+        return colors.get(self.platform, '#6c757d')
+
+
+class DailyTaskInstance(db.Model):
+    __tablename__ = 'daily_task_instances'
+
+    id = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(db.Integer, db.ForeignKey('task_templates.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    task_date = db.Column(db.Date, nullable=False, default=date.today)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref='task_instances')
+
+    __table_args__ = (
+        db.UniqueConstraint('template_id', 'user_id', 'task_date', name='uq_task_user_date'),
+    )
+
+
+class AppSetting(db.Model):
+    __tablename__ = 'app_settings'
+
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text)
+
+    @staticmethod
+    def get(key, default=None):
+        row = db.session.get(AppSetting, key)
+        return row.value if row else default
+
+    @staticmethod
+    def set(key, value):
+        row = db.session.get(AppSetting, key)
+        if row:
+            row.value = value
+        else:
+            db.session.add(AppSetting(key=key, value=value))
+        db.session.commit()

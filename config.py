@@ -31,5 +31,8 @@ class Config:
     # Base URL for OAuth redirects
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:8090')
 
+    # OpenAI
+    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+
     # Scheduler
     SCHEDULER_API_ENABLED = False

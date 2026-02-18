@@ -29,6 +29,8 @@ def create_app():
     from app_package.routes.analytics import analytics_bp
     from app_package.routes.admin import admin_bp
     from app_package.routes.prospecting import prospecting_bp
+    from app_package.routes.ai_insights import ai_insights_bp
+    from app_package.routes.daily_tasks import daily_tasks_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -39,6 +41,8 @@ def create_app():
     app.register_blueprint(analytics_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(prospecting_bp)
+    app.register_blueprint(ai_insights_bp)
+    app.register_blueprint(daily_tasks_bp)
 
     # Create tables
     with app.app_context():

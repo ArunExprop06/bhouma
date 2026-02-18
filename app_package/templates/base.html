@@ -47,6 +47,20 @@
                 </a>
             </li>
 
+            <li class="nav-label">Productivity</li>
+            <li>
+                <a href="{{ url_for('daily_tasks.my_tasks') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('daily_tasks.') and 'admin' not in request.endpoint }}">
+                    <i class="bi bi-check2-square"></i> My Tasks
+                </a>
+            </li>
+            {% if current_user.is_admin %}
+            <li>
+                <a href="{{ url_for('daily_tasks.admin_report') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('daily_tasks.admin') }}">
+                    <i class="bi bi-clipboard-data"></i> Team Tasks
+                </a>
+            </li>
+            {% endif %}
+
             <li class="nav-label">Engagement</li>
             <li>
                 <a href="{{ url_for('comments.inbox') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('comments.') }}">
@@ -56,6 +70,11 @@
             <li>
                 <a href="{{ url_for('analytics.overview') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('analytics.') }}">
                     <i class="bi bi-bar-chart-line"></i> Analytics
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('ai_insights.index') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('ai_insights.') }}">
+                    <i class="bi bi-stars"></i> AI Insights
                 </a>
             </li>
 

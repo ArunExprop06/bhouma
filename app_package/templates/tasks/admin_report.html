@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Team Tasks{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-clipboard-data"></i> Team Task Report</h2>
+    <p>Monitor daily task completion across the team</p>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-primary-gradient"><i class="bi bi-people"></i></div>
+                <div>
+                    <div class="stat-value">{{ members|length }}</div>
+                    <div class="stat-label">Team Members</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon" style="background:#25D366"><i class="bi bi-check2-all"></i></div>
+                <div>
+                    <div class="stat-value">{{ all_done }}/{{ all_total }}</div>
+                    <div class="stat-label">Tasks Completed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon bg-ig"><i class="bi bi-percent"></i></div>
+                <div>
+                    <div class="stat-value">{{ overall_pct }}%</div>
+                    <div class="stat-label">Overall Completion</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Controls -->
+<div class="card-custom mb-4">
+    <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+        <form class="d-flex align-items-center gap-2 flex-wrap" method="get">
+            <input type="date" name="date" class="form-control" style="width:auto"
+                   value="{{ sel_date.strftime('%Y-%m-%d') }}" onchange="this.form.submit()">
+            <div class="btn-group">
+                <button type="submit" name="view" value="day"
+                        class="btn btn-sm {{ 'btn-primary' if view == 'day' else 'btn-outline-primary' }}">Day</button>
+                <button type="submit" name="view" value="week"
+                        class="btn btn-sm {{ 'btn-primary' if view == 'week' else 'btn-outline-primary' }}">Week</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if view == 'day' %}
+<!-- Day View -->
+<div class="table-custom">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Done</th>
+                <th>Total</th>
+                <th>Completion</th>
+                <th style="min-width:200px">Progress</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for m in members %}
+        {% set d = day_data[m.id] %}
+        <tr>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle bg-primary-gradient d-flex align-items-center justify-content-center" style="width:32px;height:32px;color:#fff;font-weight:700;font-size:0.75rem;">
+                        {{ m.name[0]|upper }}
+                    </div>
+                    <div>
+                        <div class="fw-semibold">{{ m.name }}</div>
+                        <small class="text-muted">{{ m.email }}</small>
+                    </div>
+                </div>
+            </td>
+            <td>{{ d.done }}</td>
+            <td>{{ d.total }}</td>
+            <td>
+                {% if d.pct is not none %}
+                <span class="fw-bold {{ 'text-success' if d.pct >= 80 else ('text-warning' if d.pct >= 50 else 'text-danger') }}">
+                    {{ d.pct }}%
+                </span>
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if d.total > 0 %}
+                <div class="progress" style="height:8px;">
+                    <div class="progress-bar {{ 'bg-success' if d.pct >= 80 else ('bg-warning' if d.pct >= 50 else 'bg-danger') }}"
+                         style="width:{{ d.pct }}%"></div>
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<!-- Week View -->
+<div class="table-custom" style="overflow-x:auto">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Member</th>
+                {% for d in dates %}
+                <th class="text-center team-cell-header {{ 'fw-bold' if d == sel_date }}">
+                    {{ d.strftime('%a') }}<br>
+                    <small>{{ d.strftime('%d/%m') }}</small>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for m in members %}
+        <tr>
+            <td>
+                <div class="fw-semibold">{{ m.name }}</div>
+            </td>
+            {% for d in dates %}
+            {% set cell = week_data[m.id][d] %}
+            <td class="text-center team-cell
+                {% if cell.pct is not none %}
+                    {{ 'team-cell-green' if cell.pct >= 80 else ('team-cell-yellow' if cell.pct >= 50 else 'team-cell-red') }}
+                {% endif %}">
+                {% if cell.total > 0 %}
+                <div class="fw-bold">{{ cell.pct }}%</div>
+                <small>{{ cell.done }}/{{ cell.total }}</small>
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
