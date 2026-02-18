@@ -30,7 +30,7 @@
 <div class="empty-state">
     <i class="bi bi-clipboard-check d-block"></i>
     <h5>No tasks assigned yet</h5>
-    <p>Your admin hasn't created any task templates. Check back later.</p>
+    <p>Your admin hasn't assigned any tasks to you. Check back later.</p>
 </div>
 {% else %}
 
@@ -46,25 +46,31 @@
 
 {% for inst in grouped[plat] %}
 <div class="task-item {{ 'completed' if inst.is_completed }}" id="task-{{ inst.id }}">
-    <div class="d-flex align-items-start gap-3">
-        <div class="task-check" onclick="toggleTask({{ inst.id }})">
-            <i class="bi {{ 'bi-check-circle-fill' if inst.is_completed else 'bi-circle' }}"></i>
-        </div>
+    <div class="d-flex align-items-center gap-3">
+        <label class="task-checkbox" onclick="event.preventDefault(); toggleTask({{ inst.id }})">
+            <input type="checkbox" {{ 'checked' if inst.is_completed }} tabindex="-1">
+            <span class="checkmark"></span>
+        </label>
         <div class="flex-grow-1">
             <div class="task-title">{{ inst.template.title }}</div>
             {% if inst.template.description %}
             <div class="task-desc text-muted small">{{ inst.template.description }}</div>
             {% endif %}
-            <div class="mt-2">
+            <div class="mt-1">
                 <input type="text" class="form-control form-control-sm task-notes-input"
                        placeholder="Add a note..." value="{{ inst.notes or '' }}"
                        onchange="saveNotes({{ inst.id }}, this.value)"
                        style="max-width:400px;">
             </div>
         </div>
-        {% if inst.is_completed and inst.completed_at %}
-        <small class="text-success text-nowrap">{{ inst.completed_at.strftime('%H:%M') }}</small>
-        {% endif %}
+        <div class="text-end">
+            {% if inst.is_completed and inst.completed_at %}
+            <span class="badge bg-success"><i class="bi bi-check2"></i> Done</span>
+            <div class="small text-muted">{{ inst.completed_at.strftime('%H:%M') }}</div>
+            {% else %}
+            <span class="badge bg-light text-muted">Pending</span>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endfor %}
@@ -85,13 +91,16 @@ function toggleTask(id) {
     .then(d => {
         if (!d.ok) return;
         const el = document.getElementById('task-' + id);
-        const icon = el.querySelector('.task-check i');
+        const cb = el.querySelector('.task-checkbox input');
+        const badge = el.querySelector('.text-end');
         if (d.completed) {
             el.classList.add('completed');
-            icon.className = 'bi bi-check-circle-fill';
+            cb.checked = true;
+            badge.innerHTML = '<span class="badge bg-success"><i class="bi bi-check2"></i> Done</span><div class="small text-muted">Just now</div>';
         } else {
             el.classList.remove('completed');
-            icon.className = 'bi bi-circle';
+            cb.checked = false;
+            badge.innerHTML = '<span class="badge bg-light text-muted">Pending</span>';
         }
         document.getElementById('progressLabel').textContent = `${d.done}/${d.total} (${d.pct}%)`;
         const bar = document.getElementById('progressBar');

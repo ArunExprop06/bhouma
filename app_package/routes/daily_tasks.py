@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app_package import db
-from app_package.models import User, TaskTemplate, DailyTaskInstance, AppSetting
+from app_package.models import User, TaskTemplate, DailyTaskInstance, TaskAssignment, AppSetting
 from datetime import datetime, date, timedelta, timezone
 from functools import wraps
 import urllib.parse
@@ -21,17 +21,24 @@ def admin_required(f):
 
 
 def ensure_today_tasks(user_id):
-    """Create missing DailyTaskInstance rows for today based on active templates."""
+    """Create missing DailyTaskInstance rows for today based on assigned active templates."""
     today = date.today()
-    active_templates = db.session.query(TaskTemplate).filter_by(is_active=True).all()
-    active_ids = {t.id for t in active_templates}
+
+    # Only templates assigned to this user AND active
+    assigned_ids = {a.template_id for a in
+                    db.session.query(TaskAssignment).filter_by(user_id=user_id).all()}
+    active_assigned = {t.id for t in
+                       db.session.query(TaskTemplate).filter(
+                           TaskTemplate.id.in_(assigned_ids),
+                           TaskTemplate.is_active == True
+                       ).all()} if assigned_ids else set()
 
     existing = db.session.query(DailyTaskInstance).filter_by(
         user_id=user_id, task_date=today
     ).all()
     existing_template_ids = {inst.template_id for inst in existing}
 
-    missing = active_ids - existing_template_ids
+    missing = active_assigned - existing_template_ids
     for tid in missing:
         inst = DailyTaskInstance(template_id=tid, user_id=user_id, task_date=today)
         db.session.add(inst)
@@ -204,8 +211,10 @@ def admin_templates():
     seed_sample_tasks(current_user.id)
     templates = db.session.query(TaskTemplate).order_by(
         TaskTemplate.sort_order, TaskTemplate.id).all()
+    members = db.session.query(User).filter_by(is_active_user=True).order_by(User.name).all()
     wa_number = AppSetting.get('whatsapp_group_number', '')
-    return render_template('tasks/admin_templates.html', templates=templates, wa_number=wa_number)
+    return render_template('tasks/admin_templates.html',
+                           templates=templates, members=members, wa_number=wa_number)
 
 
 @daily_tasks_bp.route('/admin/templates/create', methods=['POST'])
@@ -275,6 +284,27 @@ def delete_template(tid):
     db.session.delete(t)
     db.session.commit()
     flash(f'Task "{title}" deleted.', 'success')
+    return redirect(url_for('daily_tasks.admin_templates'))
+
+
+@daily_tasks_bp.route('/admin/templates/<int:tid>/assign', methods=['POST'])
+@login_required
+@admin_required
+def assign_template(tid):
+    t = db.session.get(TaskTemplate, tid)
+    if not t:
+        flash('Template not found.', 'danger')
+        return redirect(url_for('daily_tasks.admin_templates'))
+
+    selected_user_ids = request.form.getlist('user_ids', type=int)
+
+    # Remove old assignments
+    db.session.query(TaskAssignment).filter_by(template_id=tid).delete()
+    # Add new
+    for uid in selected_user_ids:
+        db.session.add(TaskAssignment(template_id=tid, user_id=uid))
+    db.session.commit()
+    flash(f'Assigned "{t.title}" to {len(selected_user_ids)} member(s).', 'success')
     return redirect(url_for('daily_tasks.admin_templates'))
 
 

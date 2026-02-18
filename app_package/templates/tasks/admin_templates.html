@@ -5,7 +5,7 @@
 <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
     <div>
         <h2><i class="bi bi-list-check"></i> Task Templates</h2>
-        <p>Define daily tasks that employees need to complete</p>
+        <p>Define daily tasks and assign them to team members</p>
     </div>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
         <i class="bi bi-plus-lg"></i> New Task
@@ -26,8 +26,9 @@
                 <th style="width:40px">#</th>
                 <th>Task</th>
                 <th>Platform</th>
+                <th>Assigned To</th>
                 <th>Status</th>
-                <th style="width:200px">Actions</th>
+                <th style="width:220px">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -46,6 +47,17 @@
                     </span>
                 </td>
                 <td>
+                    {% if t.assignments %}
+                    <span class="badge bg-primary">{{ t.assignments|length }} member{{ 's' if t.assignments|length > 1 }}</span>
+                    <div class="small text-muted mt-1">
+                        {% for a in t.assignments[:3] %}{{ a.user.name }}{{ ', ' if not loop.last }}{% endfor %}
+                        {% if t.assignments|length > 3 %}+{{ t.assignments|length - 3 }} more{% endif %}
+                    </div>
+                    {% else %}
+                    <span class="badge bg-secondary">Unassigned</span>
+                    {% endif %}
+                </td>
+                <td>
                     {% if t.is_active %}
                     <span class="badge bg-success">Active</span>
                     {% else %}
@@ -53,7 +65,10 @@
                     {% endif %}
                 </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ t.id }}">
+                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#assignModal{{ t.id }}" title="Assign">
+                        <i class="bi bi-people"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ t.id }}" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
                     <form action="{{ url_for('daily_tasks.toggle_template', tid=t.id) }}" method="post" class="d-inline">
@@ -63,10 +78,45 @@
                     </form>
                     <form action="{{ url_for('daily_tasks.delete_template', tid=t.id) }}" method="post" class="d-inline"
                           onsubmit="return confirm('Delete this task template? All related instances will also be removed.')">
-                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
                     </form>
                 </td>
             </tr>
+
+            <!-- Assign Modal -->
+            <div class="modal fade" id="assignModal{{ t.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <form action="{{ url_for('daily_tasks.assign_template', tid=t.id) }}" method="post" class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi bi-people"></i> Assign: {{ t.title }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">Select team members who should complete this task daily.</p>
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="toggleAll(this, true)">Select All</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAll(this, false)">Deselect All</button>
+                            </div>
+                            {% for m in members %}
+                            <div class="form-check py-1">
+                                <input class="form-check-input" type="checkbox" name="user_ids" value="{{ m.id }}"
+                                       id="assign_{{ t.id }}_{{ m.id }}"
+                                       {{ 'checked' if m.id in t.assigned_user_ids }}>
+                                <label class="form-check-label" for="assign_{{ t.id }}_{{ m.id }}">
+                                    <span class="fw-semibold">{{ m.name }}</span>
+                                    <small class="text-muted">({{ m.email }})</small>
+                                    {% if m.role == 'admin' %}<span class="badge bg-warning text-dark ms-1">Admin</span>{% endif %}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Assignments</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <!-- Edit Modal -->
             <div class="modal fade" id="editModal{{ t.id }}" tabindex="-1">
@@ -182,4 +232,13 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAll(btn, checked) {
+    const modal = btn.closest('.modal');
+    modal.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = checked);
+}
+</script>
 {% endblock %}

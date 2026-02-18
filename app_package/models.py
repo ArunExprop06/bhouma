@@ -165,6 +165,11 @@ class TaskTemplate(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     instances = db.relationship('DailyTaskInstance', backref='template', lazy=True, cascade='all, delete-orphan')
+    assignments = db.relationship('TaskAssignment', backref='template', lazy=True, cascade='all, delete-orphan')
+
+    @property
+    def assigned_user_ids(self):
+        return [a.user_id for a in self.assignments]
 
     @property
     def platform_icon(self):
@@ -203,6 +208,21 @@ class DailyTaskInstance(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint('template_id', 'user_id', 'task_date', name='uq_task_user_date'),
+    )
+
+
+class TaskAssignment(db.Model):
+    __tablename__ = 'task_assignments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(db.Integer, db.ForeignKey('task_templates.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    assigned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = db.relationship('User', backref='task_assignments')
+
+    __table_args__ = (
+        db.UniqueConstraint('template_id', 'user_id', name='uq_assignment_template_user'),
     )
 
 
