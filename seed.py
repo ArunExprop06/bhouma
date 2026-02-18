@@ -65,3 +65,15 @@ with app.app_context():
         print(f'{len(tasks)} daily task templates seeded and assigned to {len(all_users)} user(s).')
     else:
         print('Task templates already exist.')
+
+    # Ensure all templates are assigned to all active users
+    if db.session.query(TaskAssignment).count() == 0:
+        all_templates = db.session.query(TaskTemplate).all()
+        all_users = db.session.query(User).filter_by(is_active_user=True).all()
+        for t in all_templates:
+            for u in all_users:
+                db.session.add(TaskAssignment(template_id=t.id, user_id=u.id))
+        db.session.commit()
+        print(f'Assigned {len(all_templates)} tasks to {len(all_users)} user(s).')
+    else:
+        print('Task assignments already exist.')
