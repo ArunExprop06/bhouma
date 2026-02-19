@@ -90,6 +90,17 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Share to WhatsApp -->
+        <div class="card-custom mt-4">
+            <div class="card-header">
+                <i class="bi bi-whatsapp me-2"></i>Share to WhatsApp
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ url_for('posts.whatsapp_qr', post_id=post.id) }}" alt="WhatsApp QR Code" class="rounded" style="max-width:220px;">
+                <p class="text-muted small mt-2 mb-0">Scan to share on WhatsApp</p>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

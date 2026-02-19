@@ -1,4 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+import io
+from urllib.parse import quote
+
+import qrcode
+from flask import Blueprint, render_template, redirect, url_for, flash, send_file
 from flask_login import login_required
 from app_package import db
 from app_package.models import Post, PostResult, SocialAccount
@@ -42,3 +46,18 @@ def republish(post_id):
     db.session.commit()
     publish_post(post)
     return redirect(url_for('posts.detail', post_id=post.id))
+
+
+@posts_bp.route('/<int:post_id>/qr')
+@login_required
+def whatsapp_qr(post_id):
+    post = db.session.get(Post, post_id)
+    if not post:
+        flash('Post not found.', 'danger')
+        return redirect(url_for('posts.list_posts'))
+    wa_url = 'https://wa.me/?text=' + quote(post.content)
+    img = qrcode.make(wa_url, box_size=8, border=2)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
