@@ -1,7 +1,7 @@
 import io
 
 import qrcode
-from flask import Blueprint, render_template, redirect, url_for, flash, send_file, request
+from flask import Blueprint, render_template, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required
 from app_package import db
 from app_package.models import Post, PostResult, SocialAccount
@@ -54,7 +54,8 @@ def whatsapp_qr(post_id):
     if not post:
         flash('Post not found.', 'danger')
         return redirect(url_for('posts.list_posts'))
-    share_url = request.host_url.rstrip('/') + url_for('posts.share_page', post_id=post.id)
+    base = current_app.config['BASE_URL'].rstrip('/')
+    share_url = base + url_for('posts.share_page', post_id=post.id)
     img = qrcode.make(share_url, box_size=8, border=2)
     buf = io.BytesIO()
     img.save(buf, format='PNG')
@@ -68,8 +69,9 @@ def share_page(post_id):
     post = db.session.get(Post, post_id)
     if not post:
         return 'Post not found', 404
+    base = current_app.config['BASE_URL'].rstrip('/')
     image_url = None
     if post.image:
         fname = post.image.replace('\\', '/').split('/')[-1]
-        image_url = url_for('uploaded_file', filename=fname, _external=True)
+        image_url = base + url_for('uploaded_file', filename=fname)
     return render_template('posts/share.html', post=post, image_url=image_url)
