@@ -91,19 +91,53 @@
             </div>
         </div>
 
-        <!-- Share to Pages -->
+        <!-- Publish to Connected Pages (API) -->
+        {% if accounts %}
         <div class="card-custom mt-4">
             <div class="card-header">
-                <i class="bi bi-share me-2"></i>Share to Pages
+                <i class="bi bi-send me-2"></i>Publish to Pages
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% for acc in accounts %}
+                    {% if acc.id in published_acc_ids %}
+                    <button class="btn btn-outline-secondary py-2 d-flex align-items-center gap-2" disabled>
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:{{ acc.platform_color }};color:#fff;font-size:0.75rem;">
+                            <i class="bi {{ acc.platform_icon }}"></i>
+                        </span>
+                        {{ acc.account_name }}
+                        <span class="badge bg-success ms-auto">Published</span>
+                    </button>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('posts.share_to_account', post_id=post.id, account_id=acc.id) }}">
+                        <button type="submit" class="btn btn-outline-dark py-2 w-100 d-flex align-items-center gap-2">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:{{ acc.platform_color }};color:#fff;font-size:0.75rem;">
+                                <i class="bi {{ acc.platform_icon }}"></i>
+                            </span>
+                            {{ acc.account_name }}
+                            <span class="text-muted ms-auto small">Publish</span>
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Manual Share (fallback) -->
+        <div class="card-custom mt-4">
+            <div class="card-header">
+                <i class="bi bi-share me-2"></i>Manual Share
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-2">Copies text, opens page — paste and attach image</p>
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary py-2" onclick="shareToPage('{{ fb_page_url }}', 'fb')">
-                        <i class="bi bi-facebook me-1"></i> Share to Facebook Page
+                    <button type="button" class="btn btn-primary py-2" onclick="shareToPage('{{ fb_page_url }}')">
+                        <i class="bi bi-facebook me-1"></i> Facebook Page
                     </button>
-                    <button type="button" class="btn py-2 text-white" style="background:#0A66C2;" onclick="shareToPage('{{ li_page_url }}', 'li')">
-                        <i class="bi bi-linkedin me-1"></i> Share to LinkedIn Page
+                    <button type="button" class="btn py-2 text-white" style="background:#0A66C2;" onclick="shareToPage('{{ li_page_url }}')">
+                        <i class="bi bi-linkedin me-1"></i> LinkedIn Page
                     </button>
                     {% if post.image %}
                     <a href="{{ url_for('uploaded_file', filename=post.image.split('/')[-1].split('\\')[-1]) }}" download class="btn btn-outline-secondary py-2">
