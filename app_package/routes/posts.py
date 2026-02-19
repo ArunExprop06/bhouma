@@ -1,4 +1,5 @@
 import io
+from urllib.parse import quote
 
 import qrcode
 from flask import Blueprint, render_template, redirect, url_for, flash, send_file, current_app
@@ -55,23 +56,16 @@ def whatsapp_qr(post_id):
         flash('Post not found.', 'danger')
         return redirect(url_for('posts.list_posts'))
     base = current_app.config['BASE_URL'].rstrip('/')
-    share_url = base + url_for('posts.share_page', post_id=post.id)
-    img = qrcode.make(share_url, box_size=8, border=2)
+    # Build message: text + image link + approval request
+    parts = ['Please approve post\n']
+    parts.append(post.content)
+    if post.image:
+        fname = post.image.replace('\\', '/').split('/')[-1]
+        parts.append(base + url_for('uploaded_file', filename=fname))
+    message = '\n\n'.join(parts)
+    wa_url = 'https://wa.me/?text=' + quote(message)
+    img = qrcode.make(wa_url, box_size=8, border=2)
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     buf.seek(0)
     return send_file(buf, mimetype='image/png')
-
-
-@posts_bp.route('/<int:post_id>/share')
-def share_page(post_id):
-    """Public page opened after QR scan — uses Web Share API to send image + text to WhatsApp."""
-    post = db.session.get(Post, post_id)
-    if not post:
-        return 'Post not found', 404
-    base = current_app.config['BASE_URL'].rstrip('/')
-    image_url = None
-    if post.image:
-        fname = post.image.replace('\\', '/').split('/')[-1]
-        image_url = base + url_for('uploaded_file', filename=fname)
-    return render_template('posts/share.html', post=post, image_url=image_url)
