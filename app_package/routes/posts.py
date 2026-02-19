@@ -46,7 +46,9 @@ def detail(post_id):
     published_acc_ids = {r.social_account_id for r in results}
     return render_template('posts/detail.html', post=post, results=results,
                            preview_url=preview_url, clean_text=clean_text,
-                           accounts=accounts, published_acc_ids=published_acc_ids)
+                           accounts=accounts, published_acc_ids=published_acc_ids,
+                           fb_page_url=current_app.config['FACEBOOK_PAGE_URL'],
+                           li_page_url=current_app.config['LINKEDIN_PAGE_URL'])
 
 
 @posts_bp.route('/<int:post_id>/republish', methods=['POST'])

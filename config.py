@@ -36,3 +36,7 @@ class Config:
 
     # Scheduler
     SCHEDULER_API_ENABLED = False
+
+    # Share page URLs (for manual sharing)
+    FACEBOOK_PAGE_URL = os.environ.get('FACEBOOK_PAGE_URL', 'https://www.facebook.com/bhoumaenvirotech/')
+    LINKEDIN_PAGE_URL = os.environ.get('LINKEDIN_PAGE_URL', 'https://in.linkedin.com/company/bhoumaenvirotech')
