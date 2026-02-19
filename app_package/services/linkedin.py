@@ -8,7 +8,7 @@ API_URL = 'https://api.linkedin.com'
 
 def get_auth_url(redirect_uri, state=''):
     client_id = current_app.config['LINKEDIN_CLIENT_ID']
-    scopes = 'openid profile email w_member_social'
+    scopes = 'openid profile email w_member_social w_organization_social r_organization_social'
     return (
         f'https://www.linkedin.com/oauth/v2/authorization'
         f'?response_type=code&client_id={client_id}'
