@@ -5,7 +5,6 @@ from urllib.parse import quote
 import qrcode
 from flask import Blueprint, render_template, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required
-from markupsafe import Markup
 from app_package import db
 from app_package.models import Post, PostResult, SocialAccount
 
