@@ -32,7 +32,7 @@ def compose():
         if not content:
             flash('Post content cannot be empty.', 'danger')
             return redirect(url_for('compose.compose'))
-        if action != 'draft' and not selected_accounts:
+        if action not in ('draft', 'share') and not selected_accounts:
             flash('Select at least one account to publish to.', 'danger')
             return redirect(url_for('compose.compose'))
 
@@ -52,6 +52,13 @@ def compose():
             image=image_path,
         )
         post.set_platform_ids([int(a) for a in selected_accounts])
+
+        if action == 'share':
+            post.status = 'draft'
+            db.session.add(post)
+            db.session.commit()
+            flash('Post saved. Share it via Facebook, LinkedIn or WhatsApp below.', 'success')
+            return redirect(url_for('posts.detail', post_id=post.id))
 
         if action == 'draft':
             post.status = 'draft'
