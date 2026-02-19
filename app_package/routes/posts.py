@@ -143,16 +143,24 @@ def whatsapp_qr(post_id):
     if not post:
         flash('Post not found.', 'danger')
         return redirect(url_for('posts.list_posts'))
-    base, image_url, clean_text, _ = _post_urls(post)
-    parts = ['Please approve post\n', clean_text]
-    if image_url:
-        parts.append(image_url)
-    wa_url = 'https://wa.me/?text=' + quote('\n\n'.join(parts))
-    img = qrcode.make(wa_url, box_size=8, border=2)
+    base = current_app.config['BASE_URL'].rstrip('/')
+    share_url = base + url_for('posts.whatsapp_share', post_id=post.id)
+    img = qrcode.make(share_url, box_size=8, border=2)
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     buf.seek(0)
     return send_file(buf, mimetype='image/png')
+
+
+@posts_bp.route('/<int:post_id>/whatsapp')
+def whatsapp_share(post_id):
+    """Public page opened after QR scan — shares image + text to WhatsApp via Web Share API."""
+    post = db.session.get(Post, post_id)
+    if not post:
+        return 'Post not found', 404
+    _, image_url, clean_text, _ = _post_urls(post)
+    return render_template('posts/whatsapp_share.html',
+                           post=post, image_url=image_url, clean_text=clean_text)
 
 
 @posts_bp.route('/<int:post_id>/preview')
