@@ -91,14 +91,14 @@
             </div>
         </div>
 
-        <!-- Share to Pages -->
+        <!-- Share to Pages (API) -->
         <div class="card-custom mt-4">
             <div class="card-header">
-                <i class="bi bi-share me-2"></i>Share to Pages
+                <i class="bi bi-send me-2"></i>Publish to Pages
             </div>
             <div class="card-body">
                 {% if accounts %}
-                <div class="d-grid gap-2 mb-3">
+                <div class="d-grid gap-2">
                     {% for acc in accounts %}
                     {% if acc.id in published_acc_ids %}
                     <button class="btn btn-outline-secondary py-2 d-flex align-items-center gap-2" disabled>
@@ -106,7 +106,7 @@
                             <i class="bi {{ acc.platform_icon }}"></i>
                         </span>
                         {{ acc.account_name }}
-                        <span class="badge bg-success ms-auto">Shared</span>
+                        <span class="badge bg-success ms-auto">Published</span>
                     </button>
                     {% else %}
                     <form method="POST" action="{{ url_for('posts.share_to_account', post_id=post.id, account_id=acc.id) }}">
@@ -115,24 +115,61 @@
                                 <i class="bi {{ acc.platform_icon }}"></i>
                             </span>
                             {{ acc.account_name }}
-                            <span class="text-muted ms-auto small">{{ acc.platform|title }} Page</span>
+                            <span class="text-muted ms-auto small">{{ acc.platform|title }}</span>
                         </button>
                     </form>
                     {% endif %}
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted small text-center mb-3">No pages connected. <a href="{{ url_for('accounts.connect') }}">Connect one</a>.</p>
+                <p class="text-muted small text-center mb-0">No pages connected. <a href="{{ url_for('accounts.connect') }}">Connect one</a>.</p>
                 {% endif %}
+            </div>
+        </div>
 
-                <!-- WhatsApp QR -->
-                <div class="text-center border-top pt-3">
-                    <p class="text-muted small mb-2"><i class="bi bi-whatsapp me-1"></i>WhatsApp</p>
-                    <img src="{{ url_for('posts.whatsapp_qr', post_id=post.id) }}" alt="WhatsApp QR Code" class="rounded" style="max-width:200px;">
-                    <p class="text-muted small mt-2 mb-0">Scan with phone camera</p>
+        <!-- Manual Share (copy + download) -->
+        <div class="card-custom mt-4">
+            <div class="card-header">
+                <i class="bi bi-clipboard me-2"></i>Manual Share
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">Copy content and paste on any page manually</p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary py-2" onclick="copyContent()">
+                        <i class="bi bi-clipboard me-1"></i> <span id="copyLabel">Copy Text</span>
+                    </button>
+                    {% if post.image %}
+                    <a href="{{ url_for('uploaded_file', filename=post.image.split('/')[-1].split('\\')[-1]) }}" download class="btn btn-outline-secondary py-2">
+                        <i class="bi bi-download me-1"></i> Download Image
+                    </a>
+                    {% endif %}
                 </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp -->
+        <div class="card-custom mt-4">
+            <div class="card-header">
+                <i class="bi bi-whatsapp me-2"></i>WhatsApp
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ url_for('posts.whatsapp_qr', post_id=post.id) }}" alt="WhatsApp QR Code" class="rounded" style="max-width:200px;">
+                <p class="text-muted small mt-2 mb-0">Scan with phone camera to share image + text</p>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyContent() {
+    const text = {{ clean_text|tojson }};
+    navigator.clipboard.writeText(text).then(() => {
+        const label = document.getElementById('copyLabel');
+        label.textContent = 'Copied!';
+        setTimeout(() => { label.textContent = 'Copy Text'; }, 2000);
+    });
+}
+</script>
 {% endblock %}
