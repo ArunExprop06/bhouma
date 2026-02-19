@@ -1,4 +1,5 @@
 import io
+import re
 from urllib.parse import quote
 
 import qrcode
@@ -57,8 +58,10 @@ def whatsapp_qr(post_id):
         return redirect(url_for('posts.list_posts'))
     base = current_app.config['BASE_URL'].rstrip('/')
     # Build message: text + image link + approval request
+    # Strip any HTML tags from content
+    clean_text = re.sub(r'<[^>]+>', '', post.content).strip()
     parts = ['Please approve post\n']
-    parts.append(post.content)
+    parts.append(clean_text)
     if post.image:
         fname = post.image.replace('\\', '/').split('/')[-1]
         parts.append(base + url_for('uploaded_file', filename=fname))
